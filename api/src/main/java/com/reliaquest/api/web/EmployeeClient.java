@@ -1,11 +1,13 @@
 package com.reliaquest.api.web;
 
+import com.reliaquest.api.exception.EmployeeNotFoundException;
 import com.reliaquest.api.exception.MockServerException;
 import com.reliaquest.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
 import java.util.Collections;
@@ -24,7 +26,7 @@ public class EmployeeClient {
 
     public List<Employee> getAllEmployees() {
         try {
-            log.info("Calling Mock employee API");
+            log.debug("EmployeeClient | Calling Mock employee API");
             Response response = restClient
                     .get()
                     .uri("/api/v1/employee")
@@ -32,18 +34,24 @@ public class EmployeeClient {
                     .body(Response.class);
 
             return Optional.ofNullable(response)
-                    .map(Response::getData)
+                    .map(response1 -> response1.getData())
                     .orElse(Collections.emptyList());
-
-        } catch (Exception ex) {
-            log.error("Mock API error", ex.getMessage());
-            throw new MockServerException("Failed to fetch employees", ex);
+        }
+        catch (HttpClientErrorException.NotFound e) {
+            log.error("EmployeeClient | Employees not found "+ e.getMessage());
+            throw new EmployeeNotFoundException("Employees not found ", e);
+        } catch (ResourceAccessException e) {
+            log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
+            throw new MockServerException("Mock API unreachable ", e);
+        }catch (Exception e) {
+            log.error("EmployeeClient | Mock API error", e.getMessage());
+            throw new MockServerException("Failed to fetch employees", e);
         }
     }
 
     public Employee getEmployeeById(String id) {
         try {
-            log.debug("Calling Mock employee API");
+            log.debug("EmployeeClient | Calling Mock employee API");
             EmployeeResponse response = restClient
                     .get()
                     .uri("/api/v1/employee/{id}", id)
@@ -51,22 +59,26 @@ public class EmployeeClient {
                     .body(EmployeeResponse.class);
 
             return Optional.ofNullable(response)
-                    .map(EmployeeResponse::getData)
+                    .map(employeeResponse -> employeeResponse.getData())
                     .orElse(null);
 
         }
-        catch (HttpClientErrorException.NotFound ex) {
-            log.warn("Employee not found in downstream for id: {}", id);
-            throw new MockServerException("Employee not found with id: " + id);
-        } catch (Exception ex) {
-            log.error("Mock API error", ex);
-            throw new MockServerException("Failed to fetch employees", ex);
+        catch (HttpClientErrorException.NotFound e) {
+            log.error("EmployeeClient | Employee not found with id: {}", id);
+            throw new EmployeeNotFoundException("Employee not found with id: " + id, e);
+        } catch (ResourceAccessException e) {
+            log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
+            throw new MockServerException("Mock API unreachable ", e);
+        }catch (Exception e) {
+            log.error("EmployeeClient | Mock API error", e.getMessage());
+            throw new MockServerException("Failed to fetch employees", e);
         }
     }
 
     public Employee createEmployee(CreateEmployeeInput employeeInput) {
 
         try {
+            log.debug("EmployeeClient | Calling Mock employee API");
             EmployeeResponse response = restClient
                     .post()
                     .uri("/api/v1/employee")
@@ -80,15 +92,22 @@ public class EmployeeClient {
 
             return response.getData();
 
-        } catch (Exception ex) {
-            log.error("Error creating employee", ex);
-            throw new MockServerException("Downstream create failed", ex);
+        } catch (HttpClientErrorException.BadRequest e) {
+            log.error("EmployeeClient | Invalid employee data sent to mock server "+ e.getMessage());
+            throw new MockServerException("Invalid employee data sent to mock server ", e);
+        } catch (ResourceAccessException e) {
+            log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
+            throw new MockServerException("Mock API unreachable ", e);
+        } catch (Exception e) {
+            log.error("EmployeeClient | Employee creation failed ... Check employee details constraints", e.getMessage());
+            throw new MockServerException("Check employee details constraints", e);
         }
     }
 
     public Boolean deleteEmployeeByName(String name) {
 
         try {
+            log.debug("EmployeeClient | Calling Mock employee API");
             DeleteEmployeeResponse response = restClient
                     .method(HttpMethod.DELETE)
                     .uri("/api/v1/employee")
@@ -97,14 +116,20 @@ public class EmployeeClient {
                     .body(DeleteEmployeeResponse.class);
 
             if (response == null || response.getData() == null) {
-                throw new MockServerException("Failed to create employee");
+                throw new MockServerException("Failed to delete employee");
             }
 
             return response.getData();
 
-        } catch (Exception ex) {
-            log.error("Error creating employee", ex);
-            throw new MockServerException("Downstream create failed", ex);
+        } catch (HttpClientErrorException.NotFound e) {
+            log.error("EmployeeClient | Employee not found with name: {}", name);
+            throw new EmployeeNotFoundException("Employee not found with name: " + name, e);
+        } catch (ResourceAccessException e) {
+            log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
+            throw new MockServerException("Mock API unreachable ", e);
+        } catch (Exception e) {
+            log.error("EmployeeClient | Error deleting employee ", e.getMessage());
+            throw new MockServerException("EmployeeClient | Error deleting employee ", e);
         }
     }
 

@@ -14,7 +14,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body("Mock service unavailable");
+                .body("Mock service issue ..."+ ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -23,6 +23,15 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .badRequest()
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(EmployeeNotFoundException.class)
+    public ResponseEntity<String> handleEmployeeNotFoundException(
+            EmployeeNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(ex.getMessage());
     }
 }
