@@ -54,6 +54,6 @@ public class ServerConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(new RandomRequestLimitInterceptor());
+        registry.addInterceptor(new RandomRequestLimitInterceptor());
     }
 }

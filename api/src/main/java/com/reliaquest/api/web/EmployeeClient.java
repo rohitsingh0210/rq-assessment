@@ -2,6 +2,7 @@ package com.reliaquest.api.web;
 
 import com.reliaquest.api.exception.EmployeeNotFoundException;
 import com.reliaquest.api.exception.MockServerException;
+import com.reliaquest.api.exception.RateLimitException;
 import com.reliaquest.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
@@ -24,6 +25,7 @@ public class EmployeeClient {
         this.restClient = restClient;
     }
 
+
     public List<Employee> getAllEmployees() {
         try {
             log.debug("EmployeeClient | Calling Mock employee API");
@@ -40,14 +42,18 @@ public class EmployeeClient {
         catch (HttpClientErrorException.NotFound e) {
             log.error("EmployeeClient | Employees not found "+ e.getMessage());
             throw new EmployeeNotFoundException("Employees not found ", e);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.error("EmployeeClient | Mock API unreachable... too many requests "+e.getMessage());
+            throw new RateLimitException("Too many requests, slow down "+e);
         } catch (ResourceAccessException e) {
             log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
-            throw new MockServerException("Mock API unreachable ", e);
-        }catch (Exception e) {
+            throw new ResourceAccessException(e.getMessage());
+        } catch (Exception e) {
             log.error("EmployeeClient | Mock API error", e.getMessage());
             throw new MockServerException("Failed to fetch employees", e);
         }
     }
+
 
     public Employee getEmployeeById(String id) {
         try {
@@ -66,14 +72,18 @@ public class EmployeeClient {
         catch (HttpClientErrorException.NotFound e) {
             log.error("EmployeeClient | Employee not found with id: {}", id);
             throw new EmployeeNotFoundException("Employee not found with id: " + id, e);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.error("EmployeeClient | Mock API unreachable... too many requests "+e.getMessage());
+            throw new RateLimitException("Too many requests, slow down "+e);
         } catch (ResourceAccessException e) {
             log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
-            throw new MockServerException("Mock API unreachable ", e);
+            throw new ResourceAccessException(e.getMessage());
         }catch (Exception e) {
             log.error("EmployeeClient | Mock API error", e.getMessage());
             throw new MockServerException("Failed to fetch employees", e);
         }
     }
+
 
     public Employee createEmployee(CreateEmployeeInput employeeInput) {
 
@@ -95,14 +105,18 @@ public class EmployeeClient {
         } catch (HttpClientErrorException.BadRequest e) {
             log.error("EmployeeClient | Invalid employee data sent to mock server "+ e.getMessage());
             throw new MockServerException("Invalid employee data sent to mock server ", e);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.error("EmployeeClient | Mock API unreachable... too many requests "+e.getMessage());
+            throw new RateLimitException("Too many requests, slow down "+e);
         } catch (ResourceAccessException e) {
             log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
-            throw new MockServerException("Mock API unreachable ", e);
+            throw new ResourceAccessException(e.getMessage());
         } catch (Exception e) {
             log.error("EmployeeClient | Employee creation failed ... Check employee details constraints", e.getMessage());
             throw new MockServerException("Check employee details constraints", e);
         }
     }
+
 
     public Boolean deleteEmployeeByName(String name) {
 
@@ -124,9 +138,12 @@ public class EmployeeClient {
         } catch (HttpClientErrorException.NotFound e) {
             log.error("EmployeeClient | Employee not found with name: {}", name);
             throw new EmployeeNotFoundException("Employee not found with name: " + name, e);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.error("EmployeeClient | Mock API unreachable... too many requests "+e.getMessage());
+            throw new RateLimitException("Too many requests, slow down "+e);
         } catch (ResourceAccessException e) {
             log.error("EmployeeClient | Mock API unreachable "+e.getMessage());
-            throw new MockServerException("Mock API unreachable ", e);
+            throw new ResourceAccessException(e.getMessage());
         } catch (Exception e) {
             log.error("EmployeeClient | Error deleting employee ", e.getMessage());
             throw new MockServerException("EmployeeClient | Error deleting employee ", e);
