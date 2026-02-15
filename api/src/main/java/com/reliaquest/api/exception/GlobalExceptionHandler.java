@@ -4,25 +4,42 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.ResourceAccessException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MockServerException.class)
-    public ResponseEntity<String> handleDownstreamError(
-            MockServerException ex) {
-
+    public ResponseEntity<String> handleDownstreamError(MockServerException ex) {
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body("Mock service unavailable");
+                .body("Mock service issue ..."+ ex.getMessage());
+    }
+
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<String> handleRateLimitError(RateLimitException ex) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body("Too many requests, slow down ..."+ ex.getMessage());
+    }
+    @ExceptionHandler(ResourceAccessException.class)
+    public ResponseEntity<String> handleMockApiError(ResourceAccessException ex) {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("Mock service is not available ..."+ ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleBadRequest(
-            IllegalArgumentException ex) {
-
+    public ResponseEntity<String> handleBadRequest(IllegalArgumentException ex) {
         return ResponseEntity
                 .badRequest()
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(EmployeeNotFoundException.class)
+    public ResponseEntity<String> handleEmployeeNotFoundException(EmployeeNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(ex.getMessage());
     }
 }

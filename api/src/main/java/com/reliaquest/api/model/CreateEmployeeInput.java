@@ -1,10 +1,12 @@
 package com.reliaquest.api.model;
 
 import jakarta.validation.constraints.*;
-import lombok.Data;
-import lombok.Setter;
+import lombok.*;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
 public class CreateEmployeeInput {
     private String name;
     private Integer salary;
